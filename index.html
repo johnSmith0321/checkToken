@@ -1,287 +1,691 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>批量检测账号有效性</title>
+    <title>硅基余额查询</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            /* 更新为清新柔和的配色方案 */
+            --primary-color: #70b3ff;
+            --primary-hover: #5a9ee9;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --error-color: #f66c6c;
+            --bg-color: #f4f9fd;
+            --card-bg: #ffffff;
+            --text-color: #455a64;
+            --text-secondary: #78909c;
+            --border-color: #e0e8ef;
+            --shadow-color: rgba(0, 0, 0, 0.06);
+        }
+        
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
-            background-color: #f0f2f5;
-            color: #333;
+            padding: 0;
         }
-
-        .container {
-            max-width: 800px;
+        
+        body {
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            max-width: 900px;
             margin: 0 auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            font-size: 15px;
+            letter-spacing: 0.2px;
         }
-
-        h1 {
-            color: #2c3e50;
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            padding: 28px;
+            margin-bottom: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid rgba(224, 232, 239, 0.6);
+        }
+        
+        .card:hover {
+            box-shadow: 0 6px 16px var(--shadow-color);
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 28px;
+            color: var(--primary-color);
             text-align: center;
-            margin-bottom: 30px;
+            letter-spacing: 0.5px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(112, 179, 255, 0.2);
         }
-
-        textarea {
+        
+        .input-area {
+            margin-bottom: 28px;
+        }
+        
+        #keyInput {
             width: 100%;
-            height: 200px;
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+            height: 130px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 15px;
             resize: vertical;
+            transition: all 0.25s;
+            background-color: rgba(244, 249, 253, 0.5);
         }
-
+        
+        #keyInput:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(112, 179, 255, 0.2);
+            background-color: white;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
         button {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background-color: #3498db;
-            color: #fff;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
             border: none;
-            border-radius: 4px;
-            font-size: 16px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #2980b9;
-        }
-
-        button:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
-
-        .results {
-            margin-top: 30px;
-        }
-
-        .results h2 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        .results-content {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
             font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(112, 179, 255, 0.3);
+        }
+        
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(112, 179, 255, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(112, 179, 255, 0.3);
+        }
+        
+        .results-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            letter-spacing: 0.3px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .results-title::before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background-color: currentColor;
+        }
+        
+        #results-container, #low-balance-container, #invalid-container {
+            border-radius: 12px;
+            padding: 0;
+            margin-top: 24px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        .results-content {
             max-height: 300px;
             overflow-y: auto;
-        }
-
-        #validResults {
-            border-left: 4px solid #2ecc71;
-            white-space: pre-wrap;
-        }
-
-        #invalidResults {
-            border-left: 4px solid #e74c3c;
-        }
-
-        .invalid-token {
-            background-color: #ffecec;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .invalid-token-content {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .invalid-token-token {
+            padding: 20px;
+            background-color: var(--card-bg);
             font-family: monospace;
-            background-color: #fff;
-            padding: 6px;
-            border-radius: 3px;
-            margin-bottom: 6px;
-            border: 1px solid #ffcccb;
-            word-break: break-all;
+            font-size: 14px;
+            line-height: 1.6;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) transparent;
         }
-
-        .invalid-token-message {
-            color: #c0392b;
-            font-weight: bold;
+        
+        .results-content::-webkit-scrollbar {
+            width: 6px;
         }
-
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
+        
+        .results-content::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 6px;
+        }
+        
+        .results-content::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+        
+        #results-container .results-title {
+            background-color: var(--success-color);
+            color: white;
+            padding: 16px 20px;
+            margin: 0;
+            border-bottom: none;
+            display: block;
+        }
+        
+        #results-container .results-title::before {
+            display: none;
+        }
+        
+        #low-balance-container .results-title {
+            background-color: var(--warning-color);
+            color: white;
+            padding: 16px 20px;
+            margin: 0;
+            border-bottom: none;
+            display: block;
+        }
+        
+        #low-balance-container .results-title::before {
+            display: none;
+        }
+        
+        #invalid-container .results-title {
+            background-color: var(--error-color);
+            color: white;
+            padding: 16px 20px;
+            margin: 0;
+            border-bottom: none;
+            display: block;
+        }
+        
+        #invalid-container .results-title::before {
+            display: none;
+        }
+        
+        .key-line {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            border: 1px solid transparent;
+        }
+        
+        .key-line:hover {
+            transform: translateX(4px);
+            border-color: var(--border-color);
+        }
+        
+        .success-key {
+            color: var(--success-color);
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+        
+        .error-key {
+            color: var(--error-color);
+            background-color: rgba(246, 108, 108, 0.05);
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 14px 24px;
+            background-color: var(--text-color);
+            color: white;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .notification.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-10px);
+        }
+        
+        .loading {
             display: inline-block;
-            vertical-align: middle;
+            width: 16px;
+            height: 极客时间
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
             margin-right: 10px;
+            vertical-align: middle;
         }
-
+        
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
-
-        .copy-button {
-            background-color: #27ae60;
-            margin-top: 10px;
+        
+        /* 进度条样式优化 */
+        #progress-container {
+            transition: all 0.3s ease;
         }
-
-        .copy-button:hover {
-            background-color: #2ecc71;
+        
+        #progress-bar-container {
+            height: 8px;
+            background-color: rgba(112, 179, 255, 极客时间
+            border-radius: 4px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        
+        #progress-bar {
+            height: 100%;
+            width: 0;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            transition: width 0.4s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+        }
+        
+        #progress-stats {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+        
+        /* 响应式设计优化 */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+            
+            .card {
+                padding: 20px;
+                border-radius: 10px;
+            }
+            
+            .page-title {
+                font-size: 1.6rem;
+                margin-bottom: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            button {
+                width: 100%;
+                padding: 12px 16px;
+            }
+            
+            .results-content {
+                padding: 16px;
+            }
         }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>硅基流动Token有效性检测</h1>
-        <textarea id="tokens" placeholder="请在此输入sk token，每行一个"></textarea>
-        <button id="checkButton" onclick="checkTokens()">检测账号</button>
-        <div class="results">
-            <h2>有效账号 (包含余额)</h2>
-            <div id="validResults" class="results-content"></div>
-            <button id="copyButton" class="copy-button" onclick="copyValidTokens()"
-                style="display: none;">复制所有有效账号</button>
-            <h2>无效账号</h2>
-            <div id="invalidResults" class="results-content"></div>
+    <div class="card">
+        <h1 class="page-title">硅基余额查询</h1>
+        <div class极客时间        <div class="input-area">
+            <textarea id="keyInput" placeholder="请输入API密钥（多个密钥用空格、逗号或换行分隔）"></textarea>
+            <div class="button-group">
+                <button onclick="removeDuplicates()">去除重复密钥</button>
+                <button onclick="queryAllKeys()">查询全部密钥</button>
+                <button onclick="exportSuccessKeys()">导出充足密钥</button>
+                <button onclick="copySuccessKeys()">复制充足密钥</button>
+                <button onclick="copySuccessKeysWithComma()">逗号连接复制</button>
+            </div>
         </div>
     </div>
 
+    <!-- 进度显示区域 -->
+    <div id="progress-container" class="card" style="display: none;">
+        <div class="results-title" style="background-color: var(--primary-color); color: white; padding: 16px 20px; margin: 0; border-bottom: none; display: block;">查询进度</div>
+        <div class="progress-content" style="padding: 20px;">
+            <div id="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+            <div id="progress-stats">准备查询...</极客时间        </div>
+    </div>
+    
+    <div id="results-container" class="card">
+        <div class="results-title">充足余额密钥 (余额 ≥ 1)</div>
+        <div id="results" class="results-content"></div>
+    </div>
+    
+    <div id="low-balance-container" class="card">
+        <div class="results-title">低余额密钥 (0 < 余额 < 1)</div>
+        <div id="low-balance-results" class="results-content"></div>
+    </div>
+    
+    <div id="invalid-container" class="card">
+        <div class="results-title">无效密钥 (余额 = 0 或查询失败)</div>
+        <div id="invalid-results" class="results-content"></div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+
     <script>
-        async function checkTokens() {
-            const tokensTextarea = document.getElementById('tokens');
-            const checkButton = document.getElementById('checkButton');
-            const validResults = document.getElementById('validResults');
-            const invalidResults = document.getElementById('invalidResults');
-            const copyButton = document.getElementById('copyButton');
+        function showNotification(message, duration = 3000) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.opacity = '1';
+            notification.classList.add('visible');
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.classList.remove('visible');
+            }, duration);
+        }
+        
+        function parseKeys(input) {
+            const keyRegex = /sk-[a-zA-Z0-9]+/g;
+            const matches = input.match(keyRegex);
+            if (!matches) return [];
+            
+            // 使用Set去重，然后转回数组
+            return [...new Set(matches)]
+                .map(key => key.trim())
+                .filter(key => key.length > 0);
+        }
 
-            const tokens = tokensTextarea.value.split('\n').filter(token => token.trim() !== '');
+        async function queryUserInfo(apiKey) {
+            try {
+                const response = await fetch('https://api.siliconflow.cn/v1/user/info', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP错误 ${response.status}`);
+                
+                const data = await response.json();
+                if (!data.status) throw new Error(data.message || '未知错误');
+                
+                return {
+                    success: true,
+                    key: apiKey,
+                    data: data.data
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    key: apiKey,
+                    error: error.message
+                };
+            }
+        }
 
-            if (tokens.length === 0) {
-                alert('请输入至少一个token');
+        function createResultElement(result, index) {
+            const div = document.createElement('div');
+            div.className = `key-line ${result.success ? 'success-key' : 'error-key'}`;
+            
+            if (result.success) {
+                const balance = result.data.balance || '未知';
+                div.textContent = `${index}. ${result.key} (余额: ${balance})`;
+                div.setAttribute('data-balance', balance);
+            } else {
+                div.textContent = `${index}. ${result.key} (错误: ${result.error})`;
+                div.setAttribute('data-balance', '0');
+            }
+            
+            div.setAttribute('data-full-key', result.key);
+            
+            return div;
+        }
+
+        async function queryAllKeys() {
+            const input = document.getElementById('keyInput').value;
+            if (!input.trim()) {
+                showNotification('请输入至少一个API密钥');
                 return;
             }
-
-            checkButton.disabled = true;
-            checkButton.innerHTML = '<span class="loader"></span>检测中...';
-            validResults.textContent = '';
-            invalidResults.innerHTML = '';
-            copyButton.style.display = 'none';
-
-            const results = await Promise.all(tokens.map(checkToken));
-
-            const validTokens = results.filter(r => r.isValid).map(r => `${r.token} (余额: ${r.balance})`);
-            const invalidTokens = results.filter(r => !r.isValid);
-
-            validResults.textContent = validTokens.join('\n');
-
-            invalidTokens.forEach(result => {
-                const div = document.createElement('div');
-                div.className = 'invalid-token';
-                div.innerHTML = `
-                    <div class="invalid-token-content">
-                        <div class="invalid-token-token">${result.token}</div>
-                        <div class="invalid-token-message">${result.message}</div>
-                    </div>
-                `;
-                invalidResults.appendChild(div);
-            });
-
-            if (validTokens.length > 0) {
-                copyButton.style.display = 'block';
+            
+            const keys = parseKeys(input);
+            if (keys.length === 0) {
+                showNotification('未检测到有效的API密钥格式');
+                return;
             }
+            
+            // 显示进度容器
+            const progressContainer = document.getElementById('progress-container');
+            progressContainer.style.display = 'block';
+            
+            const progressBar = document.getElementById('progress-bar');
+            const progressStats = document.getElementById('progress-stats');
+            
+            const resultsContainer = document.getElementById('results');
+            const lowBalanceContainer = document.getElementById('low-balance-results');
+            const invalidContainer = document.getElementById('invalid-results');
+            
+            resultsContainer.innerHTML = '';
+            lowBalanceContainer.innerHTML = '';
+            invalidContainer.innerHTML = '';
 
-            checkButton.disabled = false;
-            checkButton.textContent = '检测账号';
-        }
-
-        async function checkToken(token) {
+            let normalIndex = 1;
+            let lowBalanceIndex = 1;
+            let invalidIndex = 1;
+            let validCount = 0;
+            let invalidCount = 0;
+            let lowBalanceCount = 0;
+            
+            progressStats.innerHTML = `正在查询... (0/${keys.length})`;
+            progressBar.style.width = '0%';
+            
             try {
-                const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) CherryStudio/0.8.7 Chrome/120.0.6099.291 Electron/28.3.3 Safari/537.36',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120"',
-                        'x-stainless-os': 'Unknown',
-                        'x-stainless-lang': 'js',
-                        'sec-ch-ua-mobile': '?0',
-                        'x-stainless-package-version': '4.59.0',
-                        'x-stainless-runtime': 'browser:chrome',
-                        'x-stainless-arch': 'unknown',
-                        'x-stainless-runtime-version': '120.0.6099',
-                        'x-api-key': token,
-                        'sec-ch-ua-platform': 'macOS',
-                        'Sec-Fetch-Site': 'cross-site',
-                        'Sec-Fetch-Mode': 'cors',
-                        'Sec-Fetch-Dest': 'empty',
-                        'Accept-Language': 'zh-CN'
-                    },
-                    body: JSON.stringify({
-                        "model": "Qwen/Qwen2.5-72B-Instruct",
-                        "messages": [
-                            {
-                                "role": "user",
-                                "content": "hi"
-                            }
-                        ],
-                        "max_tokens": 100,
-                        "stream": false
-                    })
-                });
-
-                if (response.ok) {
-                    const balanceResponse = await fetch('https://api.siliconflow.cn/v1/user/info', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
+                // 逐个查询每个密钥，而不是并行查询
+                for (let i = 0; i < keys.length; i++) {
+                    const apiKey = keys[i];
+                    
+                    // 更新进度
+                    const progress = Math.round(((i + 1) / keys.length) * 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressStats.innerHTML = `正在查询... (${i+1}/${keys.length}) | 有效: ${validCount} | 低余额: ${lowBalanceCount} | 无效: ${invalidCount}`;
+                    
+                    // 查询当前密钥
+                    const result = await queryUserInfo(apiKey);
+                    
+                    // 判断余额和有效性
+                    let balance = 0;
+                    if (result.success) {
+                        balance = parseFloat(result.data.balance) || 0;
+                        if (balance >= 1) {
+                            // 余额大于等于1才算有效
+                            validCount++;
+                        } else if (balance > 0) {
+                            // 余额大于0小于1，算作低余额
+                            lowBalanceCount++;
+                        } else {
+                            // 余额为0，算作无效
+                            invalidCount++;
                         }
-                    });
-                    const balanceData = await balanceResponse.json();
-                    const balance = balanceData.data.totalBalance;
-                    return { token, isValid: true, balance };
-                } else {
-                    const errorData = await response.json();
-                    return { token, isValid: false, message: errorData.message };
+                    } else {
+                        // 查询失败，算作无效
+                        invalidCount++;
+                    }
+                    
+                    // 根据余额分类显示
+                    if (result.success && balance >= 1) {
+                        // 余额大于等于1的放在充足容器中
+                        resultsContainer.appendChild(createResultElement(result, normalIndex));
+                        normalIndex++;
+                        
+                        // 滚动到最新结果
+                        resultsContainer.scrollTop = resultsContainer.scrollHeight;
+                    } else if (result.success && balance > 0 && balance < 1) {
+                        // 余额大于0小于1的放在低余额容器中
+                        lowBalanceContainer.appendChild(createResultElement(result, lowBalanceIndex));
+                        lowBalanceIndex++;
+                        
+                        // 滚动到最新结果
+                        lowBalanceContainer.scrollTop = lowBalanceContainer.scrollHeight;
+                    } else {
+                        // 余额为0或查询失败的放在无效容器中
+                        invalidContainer.appendChild(createResultElement(result, invalidIndex));
+                        invalidIndex++;
+                        
+                        // 滚动到最新结果
+                        invalidContainer.scrollTop = invalidContainer.scrollHeight;
+                    }
+                    
+                    // 更新统计信息
+                    progressStats.innerHTML = `正在查询... (${i+1}/${keys.length}) | 有效: ${validCount} | 低余额: ${lowBalanceCount} | 无效: ${invalidCount}`;
                 }
+                
+                // 更新完成状态
+                progressBar.style.width = '100%';
+                progressStats.innerHTML = `查询完成 | 总共: ${keys.length} | 有效: ${validCount} | 低余额: ${lowBalanceCount} | 无效: ${invalidCount}`;
+                
+                // 检查结果数量
+                if (normalIndex === 1) {
+                    resultsContainer.innerHTML = '<div class="key-line">没有余额充足的密钥</div>';
+                }
+                
+                if (lowBalanceIndex === 1) {
+                    lowBalanceContainer.innerHTML = '<div class="key-line">没有低余额的密钥</div>';
+                }
+                
+                if (invalidIndex === 1) {
+                    invalidContainer.innerHTML = '<div class="key-line">没有余额为0或查询失败的密钥</div>';
+                }
+                
+                // 显示总结通知
+                showNotification(`查询完成，总共: ${keys.length}，有效: ${validCount}，低余额: ${lowBalanceCount}，无效: ${invalidCount}`);
             } catch (error) {
-                return { token, isValid: false, message: `请求失败: ${error.message}` };
+                progressStats.innerHTML = `查询出错 | 已完成: ${normalIndex + lowBalanceIndex + invalidIndex - 3}/${keys.length}`;
+                
+                if (normalIndex === 1) {
+                    resultsContainer.innerHTML = `<div class="error-key">查询失败: ${error.message}</div>`;
+                }
+                
+                showNotification('查询过程中发生错误');
             }
         }
 
-        function copyValidTokens() {
-            const validResults = document.getElementById('validResults');
-            const tokens = validResults.textContent.split('\n').map(line => line.split(' ')[0]);
-            const textArea = document.createElement('textarea');
-            textArea.value = tokens.join('\n');
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            alert('有效账号已复制到剪贴板');
+        function removeDuplicates() {
+            const input = document.getElementById('keyInput');
+            const originalText = input.value;
+            
+            if (!originalText.trim()) {
+                showNotification('请先输入API密钥');
+                return;
+            }
+            
+            const originalKeys = originalText.match(/sk-[a-zA-Z0-9]+/g) || [];
+            if (originalKeys.length === 0) {
+                showNotification('未检测到有效的API密钥格式');
+                return;
+            }
+            
+            // 使用Set去重
+            const uniqueKeys = [...new Set(originalKeys)];
+            
+            // 更新输入框内容
+            input.value = uniqueKeys.join('\n');
+            
+            // 显示去重结果
+            const removedCount = originalKeys.length - uniqueKeys.length;
+            if (removedCount > 0) {
+                showNotification(`已去除 ${removedCount} 个重复密钥，剩余 ${uniqueKeys.length} 个唯一密钥`);
+            } else {
+                showNotification('没有发现重复的密钥');
+            }
+        }
+
+        function exportSuccessKeys() {
+            const results = document.querySelectorAll('.key-line.success-key');
+            const keys = [];
+            
+            Array.from(results).forEach(result => {
+                const balance = parseFloat(result.getAttribute('data-balance')) || 0;
+                if (balance >= 1) {
+                    keys.push(result.getAttribute('data-full-key'));
+                }
+            });
+            
+            if (keys.length === 0) {
+                showNotification('没有找到余额充足的密钥');
+                return;
+            }
+            
+            const blob = new Blob([keys.join('\n')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'success_keys.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification(`已导出 ${keys.length} 个充足密钥`);
+        }
+
+        function copySuccessKeys() {
+            const results = document.querySelectorAll('.key-line.success-key');
+            const keys = [];
+            
+            Array.from(results).forEach(result => {
+                const balance = parseFloat(result.getAttribute('data-balance')) || 0;
+                if (balance >= 1) {
+                    keys.push(result.getAttribute('data-full-key'));
+                }
+            });
+            
+            if (keys.length > 0) {
+                navigator.clipboard.writeText(keys.join('\n'))
+                    .then(() => {
+                        showNotification(`已成功复制 ${keys.length} 个余额充足的密钥`);
+                    })
+                    .catch(err => {
+                        showNotification('复制失败: ' + err);
+                    });
+            } else {
+                showNotification('没有找到余额充足的密钥可复制');
+            }
+        }
+        
+        function copySuccessKeysWithComma() {
+            const results = document.querySelectorAll('.key-line.success-key');
+            const keys = [];
+            
+            Array.from(results).forEach(result => {
+                const balance = parseFloat(result.getAttribute('data-balance')) || 0;
+                if (balance >= 1) {
+                    keys.push(result.getAttribute('data-full-key'));
+                }
+            });
+            
+            if (keys.length > 0) {
+                navigator.clipboard.writeText(keys.join(','))
+                    .then(() => {
+                        showNotification(`已成功复制 ${keys.length} 个充足密钥，以英文逗号连接`);
+                    })
+                    .catch(err => {
+                        showNotification('复制失败: ' + err);
+                    });
+            } else {
+                showNotification('没有找到余额充足的密钥可复制');
+            }
         }
     </script>
 </body>
-
 </html>
